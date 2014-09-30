@@ -271,6 +271,21 @@ util.makeElement = function(name, attributes, childs, events) {
 	return elem;
 };
 
+util.makeElementTree = function(object) {
+	var elem = document.createElement(object.tag);
+	if(object.attributes)
+		this.deepCopyTo(elem, attributes);
+		
+	if(object.childs)
+		object.childs.forEach(function(childData) {
+			elem.appendChild(util.makeElementTree(childData));
+		});
+		
+	if(events)
+		this.addEventListeners(elem, events);
+	return elem;
+}
+
 util.makeSelect = function(attributes, options) {
 	var select = this.makeElement("select", attributes);
 	for(var idx in options)
