@@ -1,0 +1,17 @@
+<html>
+	<head>
+		<script type="text/javascript" src="util.js"></script>
+		<script type="text/javascript" src="evaluator.js"></script>
+	</head>
+	<body>
+		<form id="form">
+			<input type="number" id="a">
+			<input type="number" id="b">
+			<output for="a b" name="o" expression="sqrt(a * b)"></output>
+		</form>
+		<script type="text/javascript">
+			outputEvaluators.apply(document.getElementById("form"))
+		</script>
+	</body>
+
+</html>
