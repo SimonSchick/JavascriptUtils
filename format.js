@@ -25,10 +25,6 @@
 		return this.indexOf(what) !== -1;
 	};
 
-	function stringPrecision(str, prec) {
-		return str;
-	};
-
 	var types = {
 		number: 0,
 		string: 1
@@ -39,6 +35,7 @@
 		var floatingPoint = val.indexOf(".");
 		return val.substring(0, floatingPoint + precision + 1);
 	}
+	
 	var specifiers = {
 		d: {
 			transform: function(a) { return a | 0},
@@ -119,16 +116,12 @@
 	specifiers.F = specifiers.F;
 
 	String.format = function(formatString) {
-		var matches;
-		var ret = [];
-		var values = [];
 		var valueIdx = 1;
 		var parentArguments = arguments;
-		return formatString.replace(reg, function() {
-			debugger;
-			var reference = arguments[1] || valueIdx;
+		return formatString.replace(reg, function(wholeMatch, reference, flags, zeroPadding, customPadding, width, precision, type) {
+			var reference = parseInt(reference) || valueIdx;
 
-			var flags = arguments[2] || "";
+			var flags = flags || "";
 
 			var leftJustify = flags.contains("-");
 			var forceSign = flags.contains("+");
@@ -136,26 +129,25 @@
 			var forcePrecisionOrPrefix = flags.contains("#");
 			var zeroPadd = flags.contains("0");
 
-			var customPadding = arguments[4];
+			var customPadding = customPadding || zeroPadding;
 
 			var padding = customPadding || " ";
 
 			var value = parentArguments[reference];
 
-			var width = parseInt(arguments[5]) || 0;
+			var width = parseInt(width) || 0;
 			if(width == "*") {
 				width = parentArguments[reference++];
 				if(!width)
 					throw new Error("No value for dynamic width for parameter no. " + (reference - 2));
 			}
 
-			var precision = parseInt(arguments[6]) || 6;
+			var precision = parseInt(precision) || 6;
 			if(precision == "*") {
 				precision = parentArguments[reference++];
 				if(!precision)
 					throw new Error("No value for dynamic precision for parameter no. " + (reference - 3));
 			}
-			var type = arguments[7];
 
 			if(type == "%")
 				return "%";
@@ -168,7 +160,7 @@
 				throw new Error("No value for format parameter no. " + (reference - 1));
 
 			if(specifier.type == types.number && !parseInt(value))
-				throw new Error("Invalid value for format parameter no. " + (reference - 1) + " expected number, got string");
+				throw new TypeError("Invalid value for format parameter no. " + (reference - 1) + " expected number, got string");
 			var ret = specifier.transform ? specifier.transform(value, precision) : value;
 			var allowSign = specifier.allowSign;
 			var prefix = specifier.prefix;
