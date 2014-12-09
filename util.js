@@ -411,4 +411,11 @@ util.fetchJSON = function(url, data) {
 	return this.fetchResource(url, "json", data);
 };
 
+util.enum = function() {
+	var ret = {};
+	for(var i = 0;i < arguments.length;++i)
+		ret[arguments[i]] = i;
+	return ret;
+};
+
 return util;
