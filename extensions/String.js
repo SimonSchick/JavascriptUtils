@@ -1,5 +1,5 @@
 (function() {
-	var reg = /%(?:(\d+)\$)?([+ #-]*)('(.)|0)?((?:\d|\*)+)?(?:\.([\d*]*))?([bdiuoxXfFeEgGaAcsp%])/g
+	var reg = /%(?:(\d+)\$|\((\w+)\))?([+ #-]*)('(.)|0)?((?:\d|\*)+)?(?:\.([\d*]*))?([bdiuoxXfFeEgGaAcsp%])/g
 
 	String.prototype.repeat = function(num) {
 		if(num < 0)
@@ -63,6 +63,11 @@
 			type: types.number
 		},
 		f: {
+			transform: function(a, b) { return precBase(10, a.toLocaleString(), b); },
+			allowSign: true,
+			type: types.number
+		},
+		F: {
 			transform: function(a, b) { return a.toFixed(b); },
 			allowSign: true,
 			type: types.number
@@ -113,12 +118,14 @@
 	};
 
 	specifiers.i = specifiers.d;
-	specifiers.F = specifiers.F;
 
 	String.format = function(formatString) {
 		var valueIdx = 1;
 		var parentArguments = arguments;
-		return formatString.replace(reg, function(wholeMatch, reference, flags, zeroPadding, customPadding, width, precision, type) {
+		var isAssoc = arguments[1] instanceof Object;
+		return formatString.replace(reg, function(wholeMatch, reference, assocReference, flags, zeroPadding, customPadding, width, precision, type) {
+			if(type == "%")
+				return "%";
 			var reference = parseInt(reference) || valueIdx;
 
 			var flags = flags || "";
@@ -133,8 +140,19 @@
 
 			var padding = customPadding || " ";
 
-			var value = parentArguments[reference];
-
+			var value;
+			
+			if(isAssoc) {
+				if(!assocReference)
+					throw new Error("Cannot use associative parameters mixed with non associative");
+				value = parentArguments[1][assocReference];
+				if(value === undefined)
+					throw new Error("No value for format parameter '" + assocReference + "'");
+			} else {
+				if(assocReference)
+					throw new Error("Cannot use associative parameters mixed with non associative");
+				value = parentArguments[reference];
+			}
 			var width = parseInt(width) || 0;
 			if(width == "*") {
 				width = parentArguments[reference++];
@@ -149,14 +167,11 @@
 					throw new Error("No value for dynamic precision for parameter no. " + (reference - 3));
 			}
 
-			if(type == "%")
-				return "%";
-
 			var specifier = specifiers[type];
 			if(!specifier)
 				throw new Error("Unsupport identified '" + type + "'");
 
-			if(!value)
+			if(value === undefined)
 				throw new Error("No value for format parameter no. " + (reference - 1));
 
 			if(specifier.type == types.number && !parseInt(value))
@@ -172,10 +187,9 @@
 
 			var method = leftJustify ? String.prototype.paddRight : String.prototype.paddLeft;
 
-			if(padding == "0")
-				return fullPrefix + method.call(ret, width, "0");
-			else
-				return method.call(fullPrefix + ret, width, padding);
+			return padding == "0" ? fullPrefix + method.call(ret, width, "0") : method.call(fullPrefix + ret, width, padding);
 		});
 	};
 })();
+
+String.format("%(test)s %% %(a) .2F", {test: "woop", a: 45456.654654})
